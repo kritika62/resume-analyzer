@@ -137,7 +137,7 @@ function Loader() {
 }
 
 async function callBackend(resumeText, jobDescription) {
-  const response = await fetch("http://localhost:5000/analyze", {
+  const response = await fetch("http://resume-analyzer-production-c0d8.up.railway.app/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ resumeText, jobDescription }),
