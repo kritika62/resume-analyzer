@@ -88,4 +88,4 @@ Respond ONLY with a valid JSON object (no markdown, no explanation) in this exac
   }
 });
 
-app.listen(5000, () => console.log("Server running on http://localhost:5000"));
+app.listen(process.env.PORT || 5000, () => console.log("Server running..."));
