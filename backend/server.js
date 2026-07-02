@@ -8,7 +8,9 @@ console.log("Server started...");
 console.log("API KEY found:", process.env.GROQ_API_KEY ? "YES" : "NO — check your .env file");
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "https://resume-analyzer-two-pied.vercel.app"
+}));
 app.use(express.json());
 
 app.post("/analyze", async (req, res) => {
