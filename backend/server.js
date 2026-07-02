@@ -9,8 +9,11 @@ console.log("API KEY found:", process.env.GROQ_API_KEY ? "YES" : "NO — check y
 
 const app = express();
 app.use(cors({
-  origin: "https://resume-analyzer-two-pied.vercel.app"
+  origin: "https://resume-analyzer-two-pied.vercel.app",
+  methods: ["POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
 }));
+app.options("/analyze", cors());
 app.use(express.json());
 
 app.post("/analyze", async (req, res) => {
