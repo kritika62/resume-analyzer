@@ -1,70 +1,132 @@
-# Getting Started with Create React App
+☆✧ Resume Analyzer ☆✧
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+An AI-powered full-stack web app that analyzes your resume against a job description and returns an ATS score, keyword gap analysis, improved bullet points, and actionable feedback — in under 10 seconds.
 
-## Available Scripts
+**Live Demo:** [resume-analyzer-two-pied.vercel.app](https://resume-analyzer-two-pied.vercel.app)
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## Screenshots
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Score Tab
+![Score Tab](screenshots/score.png)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Keywords Tab
+![Keywords Tab](screenshots/keywords.png)
 
-### `npm test`
+### Bullets Tab
+![Bullets Tab](screenshots/bullets.png)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Feedback Tab
+![Feedback Tab](screenshots/feedback.png)
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## How It Works
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. User uploads a PDF resume — **PDF.js** extracts the text directly in the browser, no server round-trip needed
+2. User optionally pastes a job description
+3. React frontend sends both texts to the **Node.js backend** on Render
+4. Backend builds a structured prompt instructing **LLaMA 3.3 70B via Groq API** to act as an ATS system and return a specific JSON schema
+5. Backend strips any markdown the model adds, parses the JSON, and returns it to the frontend
+6. React app renders results across four tabs: Score, Keywords, Bullets, Feedback
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## Architecture
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
+React Frontend (Vercel)
+        │
+        │  POST /analyze
+        ▼
+Node.js Backend Proxy (Render)
+        │
+        │  Groq API call
+        ▼
+LLaMA 3.3 70B (via Groq LPU)
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+The backend proxy is a deliberate security decision — the Groq API key lives only in Render's environment variables and never touches the browser. Anyone who opened DevTools on a client-side implementation could copy the key and drain the quota.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Features
 
-## Learn More
+| Tab | What it shows |
+|---|---|
+| ✨ Score | ATS score out of 100, score breakdown across 4 dimensions (keyword match, formatting, relevance, completeness) |
+| 🔍 Keywords | Matched keywords from the job description, missing keywords to add |
+| ✏️ Bullets | Original resume bullets side-by-side with LLM-rewritten versions using stronger action verbs and metrics |
+| 💬 Feedback | Strengths and specific improvement suggestions |
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## ATS Scoring Logic
 
-### Code Splitting
+The LLM scores across four dimensions, each worth 25 points:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- **Keyword Match** — semantic matching between resume and job description (not just literal keywords — understands "built ML pipelines" = "machine learning workflows")
+- **Formatting** — structure, clarity, use of action verbs
+- **Relevance** — how well the experience matches the role
+- **Completeness** — whether key sections and details are present
 
-### Analyzing the Bundle Size
+LLM-based scoring was chosen deliberately over rule-based keyword matching because semantic equivalence matters — a keyword matcher would miss matches that a human recruiter would catch.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## Tech Stack
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+**Frontend**
+- React (Create React App)
+- PDF.js — client-side PDF text extraction
+- Deployed on Vercel
 
-### Advanced Configuration
+**Backend**
+- Node.js + Express
+- Groq API — LLaMA 3.3 70B on custom LPU hardware (~2s response time)
+- Deployed on Render
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## Why Groq + LLaMA 3.3 70B?
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- Groq runs LLaMA on custom LPU hardware — significantly faster than OpenAI's API, typically under 2 seconds
+- Generous free tier suitable for a personal project
+- 70B parameter size gives strong instruction-following, which matters for reliably returning a specific JSON schema every time
+- `temperature: 0` forces deterministic, consistent output
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Running Locally
+
+### Backend
+```bash
+cd backend
+npm install
+# Create a .env file with your Groq API key:
+# GROQ_API_KEY=gsk_your_key_here
+node server.js
+```
+
+### Frontend
+```bash
+npm install
+# Update the fetch URL in src/App.js to http://localhost:5000/analyze
+npm start
+```
+
+---
+
+## Known Limitations & Planned Improvements
+
+- **Input length validation** — very long PDFs could exceed the model's context window; planning to truncate to ~3000 words before sending
+- **Rate limiting** — no backend rate limiting currently; would add `express-rate-limit` to prevent quota drain
+- **Result persistence** — every analysis is stateless; planning to add result storage so users can compare scores before and after edits
+
+---
+
+## Author
+
+Built by **Kritika Yadav** 
+ [GitHub](https://github.com/kritika62)
